@@ -7,7 +7,7 @@ fun main() {
     printBoard(board)
 
     while (true) {
-        playerMove(board, scanner)
+        playerMove(board, scanner, 'X') // Modified line
         printBoard(board)
 
         if (checkWinner(board, 'X')) {
@@ -46,14 +46,14 @@ fun printBoard(board: Array<CharArray>) {
     }
 }
 
-fun playerMove(board: Array<CharArray>, scanner: Scanner) {
+fun playerMove(board: Array<CharArray>, scanner: Scanner, symbol: Char) {
     while (true) {
         print("Enter your move (row column): ")
         val row = scanner.nextInt()
         val col = scanner.nextInt()
 
         if (isValidMove(board, row, col)) {
-            board[row][col] = 'X'
+            board[row][col] = symbol
             break
         } else {
             println("Invalid move. Try again.")
@@ -80,30 +80,21 @@ fun isValidMove(board: Array<CharArray>, row: Int, col: Int): Boolean {
 }
 
 fun checkWinner(board: Array<CharArray>, symbol: Char): Boolean {
+    // Check rows and columns
     for (i in 0..2) {
-        if (board[i][0] == symbol && board[i][1] == symbol && board[i][2] == symbol) {
+        if (board[i][0] == symbol && board[i][1] == symbol && board[i][2] == symbol ||
+            board[0][i] == symbol && board[1][i] == symbol && board[2][i] == symbol
+        ) {
             return true
         }
-        if (board[0][i] == symbol && board[1][i] == symbol && board[2][i] == symbol) {
-            return true
-        }
     }
-    if (board[0][0] == symbol && board[1][1] == symbol && board[2][2] == symbol) {
-        return true
-    }
-    if (board[0][2] == symbol && board[1][1] == symbol && board[2][0] == symbol) {
-        return true
-    }
-    return false
+
+    // Check diagonals
+    return board[0][0] == symbol && board[1][1] == symbol && board[2][2] == symbol ||
+            board[0][2] == symbol && board[1][1] == symbol && board[2][0] == symbol
 }
 
 fun isBoardFull(board: Array<CharArray>): Boolean {
-    for (row in board) {
-        for (cell in row) {
-            if (cell == ' ') {
-                return false
-            }
-        }
-    }
-    return true
+    // Use any function to check if any cell is empty
+    return board.any { row -> row.any { cell -> cell == ' ' } }
 }
