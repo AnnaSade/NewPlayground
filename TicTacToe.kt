@@ -11,7 +11,7 @@ fun main() {
         printBoard(board)
 
         if (checkWinner(board, 'X')) {
-            println("You win! Congratulations!")
+            println("Amazing! You win! Congratulations!")
             break
         }
 
