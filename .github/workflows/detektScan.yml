@@ -11,7 +11,6 @@ on:
 
 env:
   DETEKT_RELEASE_TAG: v1.15.0
-  EXPECTED_COMMIT_SHA: 37f0a1d006977512f1f216506cd695039607c3e5
 
 jobs:
   scan:
@@ -26,8 +25,8 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh_response=$(gh api graphql --field tagName=$DETEKT_RELEASE_TAG --field commitSha=$EXPECTED_COMMIT_SHA --raw-field query='
-          query getReleaseAssetDownloadUrl($tagName: String!, $commitSha: String!) {
+        gh_response=$(gh api graphql --raw-field query='
+          query getReleaseAssetDownloadUrl($tagName: String!) {
             repository(name: "detekt", owner: "detekt") {
               release(tagName: $tagName) {
                 releaseAssets(name: "detekt", first: 1) {
