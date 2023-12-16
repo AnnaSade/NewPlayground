@@ -37,7 +37,7 @@ fun main() {
     }
 }
 
-public fun printBoard(board: Array<CharArray>) {
+ fun printBoard(board: Array<CharArray>) {
     println("  0 1 2")
     for (i in board.indices) {
         print("$i ")
