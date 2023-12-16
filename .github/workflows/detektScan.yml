@@ -6,11 +6,12 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-     - cron: '33 23 * * 1'
+    - cron: '33 23 * * 1'
   workflow_dispatch:
 
 env:
   DETEKT_RELEASE_TAG: v1.15.0
+  EXPECTED_COMMIT_SHA: 37f0a1d006977512f1f216506cd695039607c3e5
 
 jobs:
   scan:
@@ -25,7 +26,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh api graphql --field tagName=$DETEKT_RELEASE_TAG --raw-field query='
+        gh_response=$(gh api graphql --field tagName=$DETEKT_RELEASE_TAG --raw-field query='
           query getReleaseAssetDownloadUrl($tagName: String!) {
             repository(name: "detekt", owner: "detekt") {
               release(tagName: $tagName) {
@@ -40,22 +41,22 @@ jobs:
               }
             }
           }
-        ' 1> gh_response.json
-
-        DETEKT_RELEASE_SHA=$(jq --raw-output '.data.repository.release.releaseAssets.tagCommit.oid' gh_response.json)
-        if [ $DETEKT_RELEASE_SHA != "37f0a1d006977512f1f216506cd695039607c3e5" ]; then
+        ')
+        
+        DETEKT_RELEASE_SHA=$(echo "$gh_response" | jq --raw-output '.data.repository.release.releaseAssets.tagCommit.oid')
+        if [ "$DETEKT_RELEASE_SHA" != "$EXPECTED_COMMIT_SHA" ]; then
           echo "Release tag doesn't match expected commit SHA"
           exit 1
         fi
 
-        DETEKT_DOWNLOAD_URL=$(jq --raw-output '.data.repository.release.releaseAssets.nodes[0].downloadUrl' gh_response.json)
+        DETEKT_DOWNLOAD_URL=$(echo "$gh_response" | jq --raw-output '.data.repository.release.releaseAssets.nodes[0].downloadUrl')
         echo "download_url=$DETEKT_DOWNLOAD_URL" >> $GITHUB_OUTPUT
 
     - name: Setup Detekt
       run: |
         dest=$( mktemp -d )
         curl --request GET \
-          --url ${{ steps.detekt_info.outputs.download_url }} \
+          --url $DETEKT_DOWNLOAD_URL \
           --silent \
           --location \
           --output $dest/detekt
