@@ -1,5 +1,7 @@
 import java.util.*
 
+
+
 fun main() {
     val scanner = Scanner(System.`in`)
     val board = Array(3) { CharArray(3) { ' ' } }
@@ -35,7 +37,7 @@ fun main() {
     }
 }
 
-fun printBoard(board: Array<CharArray>) {
+public fun printBoard(board: Array<CharArray>) {
     println("  0 1 2")
     for (i in board.indices) {
         print("$i ")
