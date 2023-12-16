@@ -26,8 +26,8 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh_response=$(gh api graphql --field tagName=$DETEKT_RELEASE_TAG --raw-field query='
-          query getReleaseAssetDownloadUrl($tagName: String!) {
+        gh_response=$(gh api graphql --field tagName=$DETEKT_RELEASE_TAG --field commitSha=$EXPECTED_COMMIT_SHA --raw-field query='
+          query getReleaseAssetDownloadUrl($tagName: String!, $commitSha: String!) {
             repository(name: "detekt", owner: "detekt") {
               release(tagName: $tagName) {
                 releaseAssets(name: "detekt", first: 1) {
@@ -35,19 +35,10 @@ jobs:
                     downloadUrl
                   }
                 }
-                tagCommit {
-                  oid
-                }
               }
             }
           }
         ')
-        
-        DETEKT_RELEASE_SHA=$(echo "$gh_response" | jq --raw-output '.data.repository.release.releaseAssets.tagCommit.oid')
-        if [ "$DETEKT_RELEASE_SHA" != "$EXPECTED_COMMIT_SHA" ]; then
-          echo "Release tag doesn't match expected commit SHA"
-          exit 1
-        fi
 
         DETEKT_DOWNLOAD_URL=$(echo "$gh_response" | jq --raw-output '.data.repository.release.releaseAssets.nodes[0].downloadUrl')
         echo "download_url=$DETEKT_DOWNLOAD_URL" >> $GITHUB_OUTPUT
