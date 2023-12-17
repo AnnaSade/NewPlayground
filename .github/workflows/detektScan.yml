@@ -18,6 +18,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Set up Git
+      uses: actions/setup-node@v3
+      with:
+        node-version: '14'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Set up GitHub CLI
+      run: echo "deb https://cli.github.com/packages stable main" | sudo tee -a /etc/apt/sources.list.d/github-cli.list
+    - run: sudo apt-get update
+    - run: sudo apt-get install gh
+
     - uses: actions/checkout@v3
 
     - name: Get Detekt download URL
@@ -35,4 +47,34 @@ jobs:
               }
             }
           }')
-        DETEKT_DOWNLOAD_URL
+        DETEKT_DOWNLOAD_URL=$(echo "$gh_response" | jq --raw-output '.data.repository.release.releaseAssets.nodes[0].downloadUrl')
+        echo "download_url=$DETEKT_DOWNLOAD_URL" >> $GITHUB_ENV
+
+    - name: Setup Detekt
+      run: |
+        dest=$(mktemp -d)
+        curl --request GET \
+          --url $DETEKT_DOWNLOAD_URL \
+          --silent \
+          --location \
+          --output $dest/detekt
+        chmod a+x $dest/detekt
+        echo $dest >> $GITHUB_PATH
+
+    - name: Run Detekt
+      continue-on-error: true
+      run: detekt --input ${{ github.workspace }} --report sarif > ${{ github.workspace }}/detekt.sarif.json
+
+    - name: Make artifact location URIs relative
+      continue-on-error: true
+      run: |
+        jq \
+          --arg github_workspace ${{ github.workspace }} \
+          '. | ( .runs[].results[].locations[].physicalLocation.artifactLocation.uri |= if test($github_workspace) then .[($github_workspace | length + 1):] else . end )' \
+          ${{ github.workspace }}/detekt.sarif.json > ${{ github.workspace }}/detekt.sarif.json.tmp
+        mv ${{ github.workspace }}/detekt.sarif.json.tmp ${{ github.workspace }}/detekt.sarif.json
+
+    - uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: ${{ github.workspace }}/detekt.sarif.json
+        checkout_path: ${{ github.workspace }}
